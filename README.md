@@ -20,9 +20,8 @@ package main
 
 import (
 	"log"
-	"os"
 
-  "github.com/projectdiscovery/networkpolicy"
+	"github.com/projectdiscovery/networkpolicy"
 	"github.com/jak0ne/safeclient"
 )
 
@@ -35,23 +34,20 @@ func main() {
 		log.Fatal(err)
 	}
 
-  safeClient := safeclient.New(networkPolicy, 5)
+	safeClient := safeclient.New(networkPolicy, 5)
 
 	if _, err = safeClient.Get("https://127.0.0.1"); err != nil {
-		log.Fatalf("Loopback not allowed")
+		log.Fatal(err)
 	}
-
-  // Should not get here
 }
 ```
 
-Example - Pre-flight GET request and default network policy
+Example - Using default network policy
 ```go
 package main
 
 import (
 	"log"
-	"os"
 
 	"github.com/jak0ne/safeclient"
 )
@@ -64,12 +60,37 @@ func main() {
 
 	safeClient := safeclient.New(networkPolicy, 5)
 
-	// Check for malicious URL by sending a pre-flight request
-	if _, err = safeClient.Get("https://untrusted-url"); err != nil {
-		log.Fatalf("Pre-flight request failed with error: %v", err)
+	if resp, err = safeClient.Get("https://untrusted-url"); err != nil {
+		log.Fatal(err)
 	}
 
-	log.Printf("Request to %s made it through", os.Args[1])
-  // Do stuff with URL
+	log.Printf("%+v\n", resp)
+}
+```
+
+Example - Override HTTP client options, disable certificate validation
+```go
+package main
+
+import (
+	"log"
+
+	"github.com/jak0ne/safeclient"
+)
+
+func main() {
+	networkPolicy, err := safeclient.DefaultNetworkPolicy()
+	if err != nil {
+		log.Fatalf("Could not create network policy: %v", err)
+	}
+
+	safeClient := safeclient.New(networkPolicy, 5)
+	safeClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	if resp, err = safeClient.Get("https://untrusted-url"); err != nil {
+		log.Fatal(err)
+	}
+
+	log.Printf("%+v\n", resp)
 }
 ```
