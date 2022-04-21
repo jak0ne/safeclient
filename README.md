@@ -48,6 +48,7 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"github.com/jak0ne/safeclient"
 )
@@ -60,11 +61,12 @@ func main() {
 
 	safeClient := safeclient.New(networkPolicy, 5)
 
-	if resp, err = safeClient.Get("https://untrusted-url"); err != nil {
+	resp, err := safeClient.Get(os.Args[1])
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("%+v\n", resp)
+	log.Printf("%d\n", resp.StatusCode)
 }
 ```
 

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/projectdiscovery/networkpolicy"
 )
@@ -25,7 +26,9 @@ func DefaultNetworkPolicy() (*networkpolicy.NetworkPolicy, error) {
 }
 
 func New(np *networkpolicy.NetworkPolicy, maxRedirects uint) *http.Client {
-	dialer := &net.Dialer{}
+	dialer := &net.Dialer{
+		Timeout: 15 * time.Second,
+	}
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
 		host, port, err := net.SplitHostPort(addr)
@@ -57,7 +60,8 @@ func New(np *networkpolicy.NetworkPolicy, maxRedirects uint) *http.Client {
 				return errors.New("Unsupported redirect (Status code 307/308)")
 			}
 
-			if _, ok := np.ValidateHost(req.URL.Host); !ok {
+			_, ok := np.ValidateHost(req.URL.Host)
+			if req.URL.Host != "" && !ok {
 				return errors.New("Redirects to forbidden target")
 			}
 
